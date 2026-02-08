@@ -1,25 +1,28 @@
 # Affinda Skills
 
-A collection of agent skills for working with Affinda's document AI platform.
+Agent skills for integrating with [Affinda's](https://www.affinda.com) document AI platform.
 
-## Installation
-
-```bash
-# Install all skills
-npx skills add affinda/affinda-skills
-
-# Install a specific skill
-npx skills add affinda/affinda-skills@resume-parsing
-```
+Skills follow the [Agent Skills](https://agentskills.io/specification) open standard and work with Claude Code, OpenAI Codex, GitHub Copilot, and other compatible agents.
 
 ## Available Skills
 
 | Skill | Description |
 |-------|-------------|
-| `resume-parsing` | Best practices for parsing and extracting data from resumes using Affinda's API |
-| `document-classification` | Guidelines for classifying documents into categories using Affinda |
-| `invoice-extraction` | Rules and patterns for extracting structured data from invoices |
+| [`affinda`](skills/affinda/SKILL.md) | Complete guide to integrating with the Affinda document processing API — authentication, client libraries, structured outputs, webhooks, and the full documentation map. |
 
-## Publishing
+## Installation
 
-Skills follow the [Agent Skills](https://skills.sh) format. Each skill lives in `skills/<name>/SKILL.md`.
+```bash
+# Claude Code
+claude skills add affinda/skills
+
+# Or manually copy skills/affinda/ into your project's .claude/skills/ directory
+```
+
+## Links
+
+- [Affinda Documentation](https://docs.affinda.com)
+- [Affinda API Reference](https://docs.affinda.com/reference/getting-started)
+- [OpenAPI Spec](https://api.affinda.com/static/v3/api_spec.yaml)
+- [Python Client Library](https://github.com/affinda/affinda-python)
+- [TypeScript Client Library](https://github.com/affinda/affinda-typescript)
