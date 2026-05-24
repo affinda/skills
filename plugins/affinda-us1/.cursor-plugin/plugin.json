@@ -1,7 +1,7 @@
 {
-  "name": "affinda",
-  "displayName": "Affinda",
-  "description": "Process and extract structured data from documents using the Affinda MCP server and Document JSON:API.",
+  "name": "affinda-us1",
+  "displayName": "Affinda US",
+  "description": "Process and extract structured data from documents using the Affinda US1 MCP server and Document JSON:API.",
   "version": "0.1.6",
   "author": {
     "name": "Affinda",
@@ -15,7 +15,8 @@
     "document-extraction",
     "invoices",
     "resumes",
-    "mcp"
+    "mcp",
+    "us1"
   ],
   "skills": "./skills/",
   "mcpServers": "./.mcp.json"

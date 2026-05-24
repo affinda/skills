@@ -4,29 +4,30 @@ This is the public runtime plugin for using Affinda with AI agents.
 It bundles:
 
 - the Affinda MCP server configuration;
-- the Affinda plugin at `plugins/affinda`;
-- the Affinda skill at `plugins/affinda/skills/affinda`;
+- the Affinda Global plugin at `plugins/affinda`;
+- the Affinda US plugin at `plugins/affinda-us1`;
+- the Affinda skill bundled with each regional plugin;
 - Claude, Codex, and Cursor plugin manifests.
 
-The default MCP endpoint is:
+Choose the plugin that matches your Affinda account region. The default
+Affinda plugin uses the Global/AP1 MCP endpoint:
 
 ```text
 https://mcp.affinda.com/mcp
 ```
 
-If your Affinda account is hosted in the US environment, use:
+The Affinda US plugin uses:
 
 ```text
 https://mcp.us1.affinda.com/mcp
 ```
 
-Claude users are prompted for the MCP endpoint during plugin setup. Codex
-and Cursor users should update the MCP endpoint in their client settings
-if they need the US environment.
+Install one regional plugin at a time. Installing both exposes duplicate
+Affinda tool sets and can make region selection ambiguous.
 
 This repository is generated from Affinda's private source repository.
 The public repository is an installable distribution, not the source of
 truth for changes.
 
 The top-level repository is a marketplace root. The installable plugin
-content lives under `plugins/affinda`.
+content lives under `plugins/affinda` and `plugins/affinda-us1`.
