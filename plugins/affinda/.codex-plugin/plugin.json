@@ -1,6 +1,6 @@
 {
   "name": "affinda",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Process and extract structured data from documents using the Affinda MCP server and Document JSON:API.",
   "author": {
     "name": "Affinda",
@@ -17,7 +17,7 @@
     "mcp"
   ],
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
+  "mcpServers": "./.codex-mcp.json",
   "interface": {
     "displayName": "Affinda",
     "shortDescription": "Document extraction and processing through Affinda.",
