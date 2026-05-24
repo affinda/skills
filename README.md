@@ -1,28 +1,32 @@
-# Affinda Skills
+# Affinda Agent Plugin
 
-Agent skills for integrating with [Affinda's](https://www.affinda.com) document AI platform.
+This is the public runtime plugin for using Affinda with AI agents.
+It bundles:
 
-Skills follow the [Agent Skills](https://agentskills.io/specification) open standard and work with Claude Code, OpenAI Codex, GitHub Copilot, and other compatible agents.
+- the Affinda MCP server configuration;
+- the Affinda plugin at `plugins/affinda`;
+- the Affinda skill at `plugins/affinda/skills/affinda`;
+- Claude, Codex, and Cursor plugin manifests.
 
-## Available Skills
+The default MCP endpoint is:
 
-| Skill | Description |
-|-------|-------------|
-| [`affinda`](skills/affinda/SKILL.md) | Complete guide to integrating with the Affinda document processing API — authentication, client libraries, structured outputs, webhooks, and the full documentation map. |
-
-## Installation
-
-```bash
-# Claude Code
-claude skills add affinda/skills
-
-# Or manually copy skills/affinda/ into your project's .claude/skills/ directory
+```text
+https://mcp.affinda.com/mcp
 ```
 
-## Links
+If your Affinda account is hosted in the US environment, use:
 
-- [Affinda Documentation](https://docs.affinda.com)
-- [Affinda API Reference](https://docs.affinda.com/reference/getting-started)
-- [OpenAPI Spec](https://api.affinda.com/static/v3/api_spec.yaml)
-- [Python Client Library](https://github.com/affinda/affinda-python)
-- [TypeScript Client Library](https://github.com/affinda/affinda-typescript)
+```text
+https://mcp.us1.affinda.com/mcp
+```
+
+Claude users are prompted for the MCP endpoint during plugin setup. Codex
+and Cursor users should update the MCP endpoint in their client settings
+if they need the US environment.
+
+This repository is generated from Affinda's private source repository.
+The public repository is an installable distribution, not the source of
+truth for changes.
+
+The top-level repository is a marketplace root. The installable plugin
+content lives under `plugins/affinda`.

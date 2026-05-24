@@ -1,0 +1,30 @@
+{
+  "name": "affinda",
+  "description": "Process and extract structured data from documents using the Affinda MCP server and Document JSON:API.",
+  "version": "0.1.3",
+  "author": {
+    "name": "Affinda",
+    "url": "https://www.affinda.com"
+  },
+  "homepage": "https://www.affinda.com",
+  "repository": "https://github.com/affinda/skills",
+  "keywords": [
+    "affinda",
+    "document-processing",
+    "document-extraction",
+    "invoices",
+    "resumes",
+    "mcp"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.claude-mcp.json",
+  "userConfig": {
+    "mcp_url": {
+      "type": "string",
+      "title": "Affinda MCP endpoint",
+      "description": "Use https://mcp.affinda.com/mcp by default. Use https://mcp.us1.affinda.com/mcp for the US environment.",
+      "default": "https://mcp.affinda.com/mcp",
+      "required": true
+    }
+  }
+}

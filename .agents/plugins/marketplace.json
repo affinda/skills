@@ -1,0 +1,26 @@
+{
+  "name": "affinda-skills",
+  "description": "Official Affinda plugins for AI agents.",
+  "owner": {
+    "name": "Affinda",
+    "url": "https://www.affinda.com"
+  },
+  "interface": {
+    "displayName": "Affinda"
+  },
+  "plugins": [
+    {
+      "name": "affinda",
+      "description": "Process and extract structured data from documents using the Affinda MCP server and Document JSON:API.",
+      "source": {
+        "source": "local",
+        "path": "./plugins/affinda"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
