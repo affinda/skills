@@ -1,0 +1,23 @@
+{
+  "name": "affinda-eu1",
+  "displayName": "Affinda EU",
+  "description": "Process and extract structured data from documents using the Affinda EU1 MCP server and Document JSON:API.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Affinda",
+    "url": "https://www.affinda.com"
+  },
+  "homepage": "https://www.affinda.com",
+  "repository": "https://github.com/affinda/skills",
+  "keywords": [
+    "affinda",
+    "document-processing",
+    "document-extraction",
+    "invoices",
+    "resumes",
+    "mcp",
+    "eu1"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
+}

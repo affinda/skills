@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "affinda-eu1": {
+      "type": "http",
+      "url": "https://mcp.eu1.affinda.com/mcp"
+    }
+  }
+}

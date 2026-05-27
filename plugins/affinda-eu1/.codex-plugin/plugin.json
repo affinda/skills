@@ -1,0 +1,41 @@
+{
+  "name": "affinda-eu1",
+  "version": "0.1.0",
+  "description": "Process and extract structured data from documents using the Affinda EU1 MCP server and Document JSON:API.",
+  "author": {
+    "name": "Affinda",
+    "url": "https://www.affinda.com"
+  },
+  "homepage": "https://www.affinda.com",
+  "repository": "https://github.com/affinda/skills",
+  "keywords": [
+    "affinda",
+    "document-processing",
+    "document-extraction",
+    "invoices",
+    "resumes",
+    "mcp",
+    "eu1"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.codex-mcp.json",
+  "interface": {
+    "displayName": "Affinda EU",
+    "shortDescription": "Document extraction and processing through Affinda EU1.",
+    "longDescription": "Process and extract structured data from invoices, resumes, contracts, and custom document types using the Affinda EU1 MCP server and Document JSON:API.",
+    "defaultPrompt": [
+      "Set up an invoice extractor in Affinda.",
+      "Debug low-confidence extraction results in Affinda.",
+      "Create an Affinda workspace for resume processing."
+    ],
+    "developerName": "Affinda",
+    "category": "Productivity",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://www.affinda.com",
+    "privacyPolicyURL": "https://www.affinda.com/privacy",
+    "termsOfServiceURL": "https://www.affinda.com/terms"
+  }
+}

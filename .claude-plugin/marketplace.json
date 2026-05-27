@@ -17,6 +17,11 @@
       "name": "affinda-us1",
       "description": "Process and extract structured data from documents using the Affinda US1 MCP server and Document JSON:API.",
       "source": "./plugins/affinda-us1"
+    },
+    {
+      "name": "affinda-eu1",
+      "description": "Process and extract structured data from documents using the Affinda EU1 MCP server and Document JSON:API.",
+      "source": "./plugins/affinda-eu1"
     }
   ]
 }
