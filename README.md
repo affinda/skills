@@ -6,6 +6,7 @@ It bundles:
 - the Affinda MCP server configuration;
 - the Affinda Global plugin at `plugins/affinda`;
 - the Affinda US plugin at `plugins/affinda-us1`;
+- the Affinda EU plugin at `plugins/affinda-eu1`;
 - the Affinda skill bundled with each regional plugin;
 - Claude, Codex, and Cursor plugin manifests.
 
@@ -22,6 +23,12 @@ The Affinda US plugin uses:
 https://mcp.us1.affinda.com/mcp
 ```
 
+The Affinda EU plugin uses:
+
+```text
+https://mcp.eu1.affinda.com/mcp
+```
+
 Install one regional plugin at a time. Installing both exposes duplicate
 Affinda tool sets and can make region selection ambiguous.
 
@@ -30,4 +37,5 @@ The public repository is an installable distribution, not the source of
 truth for changes.
 
 The top-level repository is a marketplace root. The installable plugin
-content lives under `plugins/affinda` and `plugins/affinda-us1`.
+content lives under `plugins/affinda`, `plugins/affinda-us1`, and
+`plugins/affinda-eu1`.
