@@ -1,12 +1,20 @@
 # Field Schema Examples
 
-Drop-in starting points for `bulk_create_fields`. Adapt to the user's
-actual document format before applying.
+Starting points for new document types. Adapt to the user's actual
+document format before applying.
 
 These are the same examples the MCP server hosts at
 `affinda://schemas/{invoice,resume,contract}` — kept in sync so the
 skill is usable even when the agent's MCP client doesn't surface
 resources.
+
+**The nested `fields: [...]` inside a `table` below is a schema diagram,
+not a payload.** `bulk_create_fields` takes a flat list and has no
+`parent_id` per item, so you cannot create columns under a table in
+one bulk call. See **Creating tables — call sequence** below for the
+two-step flow (`bulk_create_fields` for top-level + table, then
+`create_field` per column under the table's auto-created `rows`
+field).
 
 ---
 
@@ -151,6 +159,96 @@ Generic contract starting point. Real-world contracts vary widely
 
 ---
 
+## Creating tables — call sequence
+
+**Critical:** Getting the table hierarchy wrong corrupts every annotation
+on the table. The agent has historically made the columns direct
+children of the `table` field; this is wrong and the documents will
+not extract correctly. Follow the sequence below exactly.
+
+### The actual hierarchy
+
+A `table` field is **not** a direct parent of the columns. The real
+structure is three levels deep:
+
+```
+<table field>          field_type=table,  multiple=true
+  └─ rows              field_type=group,  multiple=true   ← auto-created by the backend
+       ├─ <column 1>   field_type=text/float/date/...     ← parent_id = <rows id>
+       ├─ <column 2>   ...
+       └─ <column N>   ...
+```
+
+- The table itself MUST be `multiple=true` so each instance is annotated
+  independently (a single annotation cannot span pages or multiple
+  tables on one page).
+- The `rows` field is **created automatically by the backend** when you
+  create the table. **Do not create it yourself** — there is no need,
+  and a manual attempt will fail or duplicate the auto-created one.
+- Columns are children of the `rows` field, **not** of the table.
+  Setting `parent_id` to the table id will produce broken extraction.
+
+### The two-step call sequence
+
+`bulk_create_fields` has no `parent_id` per item — every field in a
+bulk call lands flat under one `field_group_id`. So tables cannot be
+created in a single call. The sequence is:
+
+1. **Create the top-level fields + the table** with `bulk_create_fields`.
+   Include the table among the flat list, with `field_type="table"` and
+   `multiple=true`. Do not try to nest columns inside it.
+2. **Look up the auto-created `rows` field id** with `list_fields` (or
+   `get_field` on the table). The rows child has `slug="rows"`,
+   `field_type="group"`, `multiple=true`, and `parent_id` set to the
+   table.
+3. **Create each column with `create_field`** (singular, one call per
+   column), passing `parent_id=<rows id>`. There is no bulk path for
+   this step — `bulk_create_fields` cannot set `parent_id`, and you must
+   not try to work around it by setting it on the table.
+
+### Worked example — invoice line items
+
+Given the invoice schema diagram above, the actual calls are:
+
+```
+# 1. Top-level + the table itself (one bulk call)
+bulk_create_fields(
+  document_type_id=<dt>,
+  fields=[
+    {"slug": "invoiceNumber", "label": "Invoice Number", "field_type": "text"},
+    {"slug": "invoiceDate",   "label": "Invoice Date",   "field_type": "date"},
+    ...
+    {"slug": "lineItems",     "label": "Line Items",     "field_type": "table", "multiple": true},
+  ],
+)
+
+# 2. Find the auto-created rows child of lineItems
+list_fields(document_type_id=<dt>)
+# → lineItems has a child with slug="rows", field_type="group", multiple=true.
+#   Capture its id.
+
+# 3. Create each column under rows (one create_field call each)
+create_field(document_type_id=<dt>, parent_id=<rows id>, slug="description", label="Description", field_type="text")
+create_field(document_type_id=<dt>, parent_id=<rows id>, slug="quantity",    label="Quantity",    field_type="float")
+create_field(document_type_id=<dt>, parent_id=<rows id>, slug="unitPrice",   label="Unit Price",  field_type="float")
+create_field(document_type_id=<dt>, parent_id=<rows id>, slug="amount",      label="Amount",      field_type="float")
+```
+
+### Common mistakes (don't do these)
+
+- **Setting `parent_id` to the table id on the columns.** Columns must
+  parent to `rows`, not to the table.
+- **Manually creating a `rows` field.** The backend creates it. If you
+  don't see one after creating the table, re-`list_fields` — it's there.
+- **Setting `multiple=true` on the columns.** Each column's value is one
+  cell per row; the repetition is provided by `rows` being multiple.
+  Only set `multiple=true` on a column if a single cell can itself hold
+  a list.
+- **Forgetting `multiple=true` on the table.** Without it, the table
+  cannot span pages or have more than one instance per document.
+
+---
+
 ## Field types reference
 
 | `field_type` | Purpose |
@@ -213,7 +311,13 @@ prevents hallucinations.
 - **Critical:** Parent fields MUST use `field_type: "group"` or
   `field_type: "table"`. Any other type will cause child fields to
   break.
-- Tables and table rows almost always have `multiple: true`.
+- **Tables have an extra level.** Columns are not direct children of
+  the table — they are children of an auto-created `rows` group field
+  (slug `rows`, `field_type=group`, `multiple=true`) that sits between
+  the table and its columns. See **Creating tables — call sequence**
+  above for the exact flow.
+- Tables themselves must have `multiple: true` so each occurrence is
+  annotated independently (single annotations cannot span pages).
 - Bias toward `table` over a `group` parent when the data lays out as
   a grid with column headings — `table` is stricter and handles the
   common case better. Use `group` only when other documents of the

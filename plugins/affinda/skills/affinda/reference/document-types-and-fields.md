@@ -48,7 +48,7 @@ the field-types reference + slug conventions + parent-field rules).
 
 | Setting | Description |
 |---|---|
-| `parent_id` | Parent field id for nested / hierarchical fields. **Never** reassign on an existing field — breaks annotations. |
+| `parent_id` | Parent field id for nested / hierarchical fields. Set at create time only — **never** reassign on an existing field, and `update_field` has no `parent_id` parameter for this reason. To restructure nesting, delete and recreate. |
 | `field_group_id` | Field group (heading) for visual organisation in the UI. Set on create or change via update. |
 | `position` | Display order within a field group (0-based). Set via `update_field`. |
 
@@ -150,10 +150,20 @@ lineItems (group, multiple=true)
 - **Structured financial information** — line items with currency
   amounts, transactions, invoice rows, payment schedules — is
   almost always a good `table` candidate.
-- Tables (and their row children) almost always have `multiple=true`.
+- The table itself must have `multiple=true` so it can occur more
+  than once per document (e.g. continuing onto page 2).
 - When the layout is grid-shaped, **prioritise `table` over `group`**.
   Tables are the right primitive for repeating-row data; reserve
   `group` for genuinely hierarchical (non-tabular) structure.
+
+**Creating a `table` is a two-step flow, not a single bulk call.**
+Columns are NOT direct children of the table: the backend
+auto-creates a `rows` group field (slug `rows`, `field_type=group`,
+`multiple=true`) between the table and its columns. Columns are
+children of `rows`. See **Creating tables — call sequence** in
+`reference/field-schemas.md` for the exact `bulk_create_fields` →
+`list_fields` → `create_field` sequence. Setting `parent_id` to the
+table id on a column is a hard error — extraction breaks.
 
 ### When NOT to use a `table` field
 
@@ -164,6 +174,18 @@ lineItems (group, multiple=true)
   column structure being present.
 - For one-off structured data with a fixed shape (no rows), use
   orphaned fields or a `group`.
+
+### Never retype into or out of `group` / `table`
+
+`update_field` will refuse `field_type="group"` or `field_type="table"`,
+and will also refuse to change a field that is *currently* a `group` or
+`table` to any other type. The structural relationships those types
+carry (child fields, row/column annotations) cannot be migrated by a
+retype — flipping the type would orphan children and corrupt existing
+annotations. If a structural change is needed, `delete_field` the
+existing field and `create_field` a new one with the desired type and
+`parent_id`. For sweeping restructures, point the user at the manual
+document-type editor in the app.
 
 ## Validation rules
 
@@ -211,6 +233,49 @@ text shows as raw characters.
 - ❌ `"Invoice Number must be present and Total Amount must be greater than zero"`
 
 Call `list_fields` to get ids before composing the prompt.
+
+#### Cells inside tables / groups: reference the child IDs, never the parent
+
+When the data being validated lives **inside a `table` or `group` parent
+field**, reference the child (cell / column) IDs in the prompt — never the
+parent ID. The parent is the row / container; only the children hold the
+actual cell values. A rule written against a parent ID checks the container,
+not the data, and almost always produces nonsensical results.
+
+For a table like:
+
+```
+lineItems        (table,  id=4820)  ← do NOT reference in rule prompts
+  ├─ description (text,   id=4821)
+  ├─ quantity    (float,  id=4822)
+  ├─ unitPrice   (float,  id=4823)
+  └─ amount      (float,  id=4824)
+```
+
+- ✅ `"@4822 must be greater than 0"` — validates each row's `quantity` cell
+- ✅ `"@4823 * @4822 must equal @4824"` — per-row arithmetic across cells
+- ✅ `field_ids=[4822, 4823, 4824]` — list only the cell IDs the rule touches
+- ❌ `"@4820 must not be empty"` — references the table container, not data
+- ❌ `field_ids=[4820]` — passing the parent ID instead of the relevant cells
+
+The same rule applies to `group` parents: reference the children
+(`firstName`, `lastName`), not the parent (`name`).
+
+#### How to tell parent from child in `list_fields` output
+
+A field is a **parent** (table / group / table_deprecated) when:
+
+- its `field_type` is `table`, `table_deprecated`, or `group`, AND
+- its `children` list is non-empty.
+
+A field is a **child** (cell / column / nested field) when its `parent_id`
+is set. Always prefer these child IDs in validation rule prompts and in
+`field_ids` whenever the rule concerns data found inside a row / group
+instance.
+
+If the user describes the check in row-level language ("each line item must
+have a quantity", "every row's total must be positive"), translate that into
+references to the relevant **cells**, not the parent table.
 
 ## Date parsing hints (DMY / MDY / YMD)
 
