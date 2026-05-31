@@ -26,8 +26,8 @@ field).
   {"slug": "invoiceDate", "label": "Invoice Date", "field_type": "date"},
   {"slug": "dueDate", "label": "Due Date", "field_type": "date"},
   {"slug": "vendorName", "label": "Vendor Name", "field_type": "text"},
-  {"slug": "vendorAddress", "label": "Vendor Address", "field_type": "text"},
-  {"slug": "billTo", "label": "Bill To", "field_type": "text"},
+  {"slug": "vendorAddress", "label": "Vendor Address", "field_type": "location"},
+  {"slug": "billTo", "label": "Bill To", "field_type": "location"},
   {"slug": "subtotal", "label": "Subtotal", "field_type": "float"},
   {"slug": "taxAmount", "label": "Tax", "field_type": "float"},
   {"slug": "totalAmount", "label": "Total", "field_type": "float"},
@@ -74,7 +74,7 @@ default.
   {"slug": "candidateName", "label": "Name", "field_type": "text"},
   {"slug": "email", "label": "Email", "field_type": "text"},
   {"slug": "phone", "label": "Phone", "field_type": "text"},
-  {"slug": "location", "label": "Location", "field_type": "text"},
+  {"slug": "location", "label": "Location", "field_type": "location"},
   {"slug": "summary", "label": "Summary", "field_type": "text"},
   {
     "slug": "workExperience",
@@ -129,7 +129,7 @@ Generic contract starting point. Real-world contracts vary widely
     "fields": [
       {"slug": "name", "label": "Name", "field_type": "text"},
       {"slug": "role", "label": "Role", "field_type": "text"},
-      {"slug": "address", "label": "Address", "field_type": "text"}
+      {"slug": "address", "label": "Address", "field_type": "location"}
     ]
   },
   {"slug": "governingLaw", "label": "Governing Law", "field_type": "text"},
@@ -253,7 +253,7 @@ create_field(document_type_id=<dt>, parent_id=<rows id>, slug="amount",      lab
 
 | `field_type` | Purpose |
 |---|---|
-| `text` | Free-form strings (names, descriptions, addresses). |
+| `text` | Free-form strings (names, descriptions, free-text). Postal addresses use `location`, not `text`. |
 | `integer` | Whole numbers. |
 | `float` | Numbers with fractional parts (amounts, quantities, percentages, prices). Default for any numeric extraction. Pin precision via `formatter_config={"formatter": {"slug": "number", "decimal_places": <0|2>}}`. |
 | `decimal` | High-precision decimal values where exact representation matters (e.g. tax-engine inputs that round-trip through fixed-point arithmetic). For ordinary money / quantity fields, prefer `float`. |
