@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-05-31T23:24:52.919472+00:00",
+  "generated_at": "2026-06-01T05:33:21.199611+00:00",
   "public_branch": "main",
   "public_repository": "https://github.com/affinda/skills.git",
   "source_branch": "live",
   "source_repository": "git@git.corp.draftable.com:affinda/affinda.git",
-  "source_sha": "e8588fc717c0f5b48968b643681e10921fec79bb",
-  "teamcity_build_id": "1100662",
-  "teamcity_build_url": "https://teamcity.corp.draftable.com/viewLog.html?buildId=1100662",
-  "version": "0.1.9"
+  "source_sha": "cfe36c60c18356a6cd4c2fcfe9d6e323bf5ec019",
+  "teamcity_build_id": "1101253",
+  "teamcity_build_url": "https://teamcity.corp.draftable.com/viewLog.html?buildId=1101253",
+  "version": "0.1.10"
 }

@@ -77,8 +77,11 @@ update_field(
 )
 ```
 
-This connects the field to the lookup. **Extraction behaviour does
-not change yet** — you still need a matching criterion.
+This connects the field to the lookup. Attaching automatically sets
+the field's type to `enum` — a data source only functions on an enum
+field, so you don't need a separate `update_field` call to retype it.
+**Extraction behaviour does not change yet** — the server creates a
+default matching criterion for you (next step).
 
 ### 5. Configure matching behaviour
 

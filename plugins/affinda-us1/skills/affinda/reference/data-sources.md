@@ -163,6 +163,14 @@ user has to do it through the Affinda UI.
 
 ## Attaching to a field — and the matching-criterion step
 
+A data source only functions on an `enum` field — the server creates
+the default matching criterion (and extraction maps values against the
+data source) only for enum fields. Both `attach_data_source_to_field`
+and passing `mapping_data_source_id` on `create_field` / `update_field`
+set the field type to `enum` automatically, so you never need a
+separate retype call. A field created with a data source works out of
+the box.
+
 After `attach_data_source_to_field` (or passing
 `mapping_data_source_id` on `create_field`), the server creates a
 default matching criterion automatically. Inspect with
