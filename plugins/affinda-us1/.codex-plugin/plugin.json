@@ -1,6 +1,6 @@
 {
   "name": "affinda-us1",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Process and extract structured data from documents using the Affinda US1 MCP server and Document JSON:API.",
   "author": {
     "name": "Affinda",

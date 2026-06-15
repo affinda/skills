@@ -95,7 +95,10 @@ editing the code creates a draft; the running version doesn't change
 until `deploy_integration_version` is called. `run_integration`
 executes the deployed version against a single document for
 verification. External APIs are reached via Pipedream **connections**
-(`add_connection_to_integration`).
+(`add_connection_to_integration`) when the service exists in the
+directory. Custom/private APIs can also be reached with direct HTTP from
+the Lambda, with credentials stored as integration secrets and read from
+environment variables.
 
 ## Document
 

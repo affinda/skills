@@ -56,7 +56,18 @@ If you ever find yourself about to end a turn after calling
   `create_integration` when you know them. They set the integration
   up fully in one shot.
 - **`add_connection_to_integration` after `create_integration`.**
-  Without it, the integration code can't reach the external service.
+  Without it, Pipedream-backed integration code can't reach the
+  external service. Skip this for manual custom APIs that use Secrets
+  and direct HTTP instead of Pipedream.
+- **No directory app is not a blocker.** If `list_pipedream_apps`
+  fails or returns no suitable service, continue with a manual custom
+  integration when the user has provided enough API details. Create the
+  integration, use Secrets for credentials, write direct HTTP code, and
+  deploy. Do not describe the missing directory app as a platform flaw.
+- **Secret checks need the integration ID.** Call
+  `list_integration_secrets` only after `create_integration` has
+  returned the integration ID. Do not put both calls in the same tool
+  batch.
 
 ## Triggers
 
@@ -93,6 +104,45 @@ def lambda_handler(event, context):
 
     if not result.get("success"):
         raise Exception(f"Failed: {result}")
+
+    return {"success": True, "message": "Data sent successfully"}
+```
+
+Manual custom API skeleton (no Pipedream connection):
+
+```python
+import json
+import os
+
+import urllib3
+from utils import get_document
+
+http = urllib3.PoolManager()
+
+def lambda_handler(event, context):
+    response = get_document(event["document_identifier"])
+    doc_fields = response["data"]
+
+    api_key = os.environ["MYOB_API_KEY"]
+    payload = {
+        "vendorName": doc_fields.get("vendorName"),
+        "totalAmount": doc_fields.get("totalAmount"),
+    }
+
+    resp = http.request(
+        "POST",
+        "https://api.example.com/invoices",
+        body=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+        timeout=urllib3.Timeout(connect=5.0, read=30.0),
+    )
+
+    if not 200 <= resp.status < 300:
+        raise Exception(f"External API failed: HTTP {resp.status} - {resp.data.decode('utf-8', errors='replace')}")
 
     return {"success": True, "message": "Data sent successfully"}
 ```
@@ -175,10 +225,34 @@ Returns a flat (NOT JSON:API) response with **camelCase** keys:
   URL for viewing a document. **Use this** when the user wants a
   link back to Affinda; do NOT construct URLs manually
   (`https://app.affinda.com/documents/{identifier}` is wrong).
-- **`api_request(account_id, target_url, method="POST", body=None, headers=None, params=None) -> dict`**
-  — HTTP through Pipedream auth proxy. **`body` must be a `dict`,
-  not a JSON string** — serialised internally. Use when no specific
-  Pipedream action exists.
+- **`api_request(account_id, target_url, method="POST", body=None, headers=None, params=None, files=None, data=None) -> dict`**
+  — HTTP through Pipedream auth proxy. Requires a Pipedream
+  `account_id`. **`body` must be a `dict`, not a JSON string** —
+  serialised internally. Use when a Pipedream connection exists but no
+  specific Pipedream action exists or the action is unreliable. To
+  upload a file, pass `files={"file":
+  ApiRequestFile(content_bytes, "name.pdf", "application/pdf")}` (import
+  `ApiRequestFile` from `utils`) for a multipart request, or
+  `data=<bytes>` for a raw byte-stream body. Do NOT hand-roll multipart
+  with `requests` / `httpx` when using a Pipedream connection.
+
+  **Response shape.** `api_request()` always returns a wrapper — the
+  third-party payload is **nested under `["data"]`**, never at the top
+  level:
+
+  ```python
+  {
+      "success": True,           # bool
+      "data": { ... },           # ← parsed third-party JSON lives HERE
+      "status_code": 200,        # third-party HTTP status (note: status_code, not "status")
+      "headers": { ... },
+  }
+  ```
+
+  There is **no `["body"]` and no `["status"]` key.** Always read the
+  payload via `["data"]`, e.g. `(resp.get("data") or {}).get("value", [])`.
+  `api_request()` already **raises on any non-2xx response**, so you do
+  not need to inspect `status_code` to detect failures.
 - **`upload_file(account_id, file_content: bytes, file_name, content_type=None) -> str`**
   — uploads a file and returns a signed URL. Required when an action
   parameter expects a file path / URL (Google Drive, Xero
@@ -193,8 +267,11 @@ Returns a flat (NOT JSON:API) response with **camelCase** keys:
 - `pydantic_models.py` is auto-generated. Do NOT modify it. If the
   user provides a Pydantic model, add the imports its type hints
   need (e.g. `from datetime import date`).
-- Use `execute_action()` for Pipedream actions, not direct HTTP
-  calls.
+- Use `execute_action()` for Pipedream actions, not direct HTTP calls.
+  Use `api_request()` when a Pipedream connection exists but you need
+  direct HTTP control through that connection. For manual custom APIs
+  with no Pipedream app/account, use `urllib3` directly and read
+  credentials from `os.environ`.
 - All dict parameters (`tool_params`, `body`) are Python dicts, never
   pre-serialised JSON strings.
 - The `context` parameter in `lambda_handler` carries no useful data
@@ -203,6 +280,9 @@ Returns a flat (NOT JSON:API) response with **camelCase** keys:
   IDs, table names, account codes provided by the user) are
   **hard-coded** in the Lambda. The only input is
   `event['document_identifier']`.
+- **Credentials are never hard-coded.** For manual custom APIs, tell
+  the user the exact secret names to add in the Integration Settings
+  Secrets section, then read them from `os.environ["NAME"]`.
 - **Prefer asking the user for specifics** (spreadsheet id, channel
   name, etc.) rather than guessing. However, if the user explicitly
   asks you not to ask questions or to "just fix it" / "just write
@@ -253,7 +333,7 @@ def lambda_handler(event, context):
         target_url=f"https://sheets.googleapis.com/v4/spreadsheets/{spreadsheet_id}/values/{sheet_name}!1:1",
         method="GET",
     )
-    existing_headers = (header_resp.get("values") or [[]])[0]
+    existing_headers = ((header_resp.get("data") or {}).get("values") or [[]])[0]
 
     if not existing_headers:
         # First-run only: write headers from document field names.
@@ -312,29 +392,29 @@ tables_response = api_request(
     target_url=f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives/{drive_id}/items/{file_id}/workbook/tables",
     method="GET",
 )
-tables = (tables_response.get("body") or {}).get("value", [])
+tables = ((tables_response.get("data") or {}).get("value", []))
 if not tables:
     raise Exception("No tables found in workbook — user must create one in Excel (Insert → Table)")
 
 table_name = tables[0]["name"]  # or ask the user if multiple
 
+# api_request() raises on non-2xx, so reaching this line means the row was added.
 add_response = api_request(
     account_id=account_id,
     target_url=f"https://graph.microsoft.com/v1.0/sites/{site_id}/drives/{drive_id}/items/{file_id}/workbook/tables/{table_name}/rows/add",
     method="POST",
     body={"values": [[col1_value, col2_value, col3_value]]},
 )
-
-status = add_response.get("status", 200)
-if status >= 400:
-    raise Exception(f"Failed to add row: status={status}, body={add_response.get('body')}")
+created_row = add_response.get("data")
 ```
 
 Rules:
 
 - Never guess table names like `"Table1"` — discover via API or
   confirm with the user.
-- Treat HTTP 200 and 201 as success; only fail on 4xx / 5xx.
+- `api_request()` raises automatically on any 4xx / 5xx, so you don't
+  need to check the status yourself — a returned response means success.
+  Read results from `response["data"]`, never `response["body"]`.
 - Never invent OneDrive / SharePoint action names that don't exist.
   Use `api_request()` with Microsoft Graph as the fallback.
 
@@ -427,13 +507,22 @@ Don't offer the user an option to specify an S3 prefix or folder.
 
 ### Webhooks / custom APIs
 
-When no Pipedream action exists, use `api_request()` for any HTTP
-endpoint with proper authentication.
+When a Pipedream connection exists but no packaged Pipedream action
+fits, use `api_request()` for full HTTP control through that connection.
+
+When no Pipedream app or connection exists for the target service, use
+the manual custom API path instead: direct `urllib3` requests, secrets
+stored in the Integration Settings Secrets section, and credentials read
+with `os.environ["NAME"]`.
 
 ## Pipedream action discovery
 
 - Use `list_pipedream_apps` to find apps. Search is imprecise — try
   short, simple terms (`"sheets"` rather than `"google sheets"`).
+- If no matching app is returned, continue with the manual custom API
+  path when the user has provided an endpoint and auth details. Do not
+  tell the user the task is impossible just because the service is not
+  in the directory.
 - There's no tool that returns a Pipedream action's parameter schema.
   When `execute_action` fails on bad params, read the error message
   carefully — it usually indicates what was expected.
@@ -450,6 +539,9 @@ endpoint with proper authentication.
 - If no suitable connection exists, find the right `app_name_slug`
   via `list_pipedream_apps`, then call `initiate_service_connection`
   to start the OAuth flow.
+- If no suitable app exists in the directory, stop trying to create a
+  Pipedream connection and build a manual custom integration with
+  Secrets and direct HTTP instead.
 
 ## Debugging a failing integration
 

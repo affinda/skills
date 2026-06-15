@@ -93,13 +93,17 @@ source of truth.
   documents going forward. They can monitor runs via
   `list_integration_runs`.
 
-## External connections (Pipedream)
+## External connections and custom APIs
 
 If the integration needs to talk to a third-party service (Slack,
-Google Sheets, etc.), the user must authorise a connection before the
-Python code can use it.
+Google Sheets, etc.), first try the Pipedream connection flow. If the
+service is not available in the directory, or the directory lookup
+fails, continue with a manual custom integration instead of treating the
+task as impossible.
 
-### Discover available apps
+### Preferred path: Pipedream service connection
+
+Discover available apps:
 
 ```
 list_pipedream_apps
@@ -107,7 +111,7 @@ list_pipedream_apps
 
 Pick the slug matching the user's target service.
 
-### Initiate the OAuth handshake
+Initiate the OAuth handshake:
 
 ```
 create_connect_token(app_name_slug=<...>)
@@ -129,12 +133,37 @@ add_connection_to_integration(
 The Python code can now use the connection via Pipedream's runtime
 helpers.
 
+### Manual path: no matching directory app
+
+When `list_pipedream_apps` returns no suitable match, or the target is a
+private/custom API, create the integration without a connection. This is
+a normal supported flow.
+
+For authenticated APIs, use the Integration Settings **Secrets** section
+for credentials:
+
+1. Choose clear uppercase secret names, e.g. `MYOB_API_KEY`.
+2. Call `list_integration_secrets` after creating the integration to see
+   whether those names already exist. It requires the integration ID, so
+   do not call it in the same tool batch as `create_integration`; wait
+   for the create result first.
+3. If a secret is missing, tell the user the exact name to add in the
+   Secrets section. Never ask them to paste the value into chat.
+4. Write code that reads credentials with `os.environ["NAME"]`.
+5. Use direct HTTP from the Lambda (`urllib3` + `json`) for the custom
+   API. Do not call `execute_action()` or `api_request()` unless there is
+   a Pipedream `account_id`.
+
+The absence of a Pipedream app is not a platform failure. Do not say the
+integration cannot be built solely because the directory has no match.
+
 ## Common mistakes to avoid
 
 - Editing `python_code` and forgetting to deploy. The user uploads,
   expects production to change, and is confused when nothing happens.
 - Passing a document slug to `run_integration`. Use the numeric ID.
-- Trying to OAuth in Python. Always use Pipedream connections.
+- Trying to OAuth in Python. Use Pipedream connections when a directory
+  app exists; otherwise use the manual secrets + direct HTTP path.
 - Replacing the whole file when you only meant to add a function —
   the user loses all other logic. Read first via
   `get_integration` if you're not sure of the current contents.
