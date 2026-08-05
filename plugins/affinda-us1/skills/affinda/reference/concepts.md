@@ -116,3 +116,11 @@ the same type. Model memory is shared across workspaces — confirming a
 document of type X in workspace A makes it eligible as a training
 example anywhere else type X is used. Splitting and integrations don't
 use model memory; only extraction and classification do.
+
+When a model-memory example guides a document's extraction, that
+example is recorded as the document's **reference document**.
+`get_document` and `get_document_extraction` return it as
+`reference_document_id`; fetching the reference document's own
+extraction shows the confirmed values that guided the result — the
+first place to look when asking why a document was extracted the way
+it was.

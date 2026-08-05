@@ -26,7 +26,8 @@ progressive disclosure) when:
 - The user is **setting up something new** (a workspace, document type,
   data source, integration). See `workflows/`.
 - A user asks **"why is extraction wrong?"** or wants to **improve
-  quality**. See `workflows/debug-low-confidence-results.md`.
+  quality**. See `workflows/debug-low-confidence-results.md` and
+  `reference/model-memory.md`.
 - The user is **reviewing extracted documents** (confirm / reject /
   archive). See `workflows/human-review-queue.md`.
 - The user references **terminology** that needs grounding —
@@ -61,6 +62,7 @@ plugin root/
             ├── common-errors.md              # error codes + remediation
             ├── field-schemas.md              # starter field schemas + types + slug rules
             ├── workspace-settings.md         # OCR / splitting / classification / model memory / email
+            ├── model-memory.md               # how model memory works + curation best practice
             ├── document-types-and-fields.md  # field settings, validation rules, auto-populate
             ├── data-sources.md               # default schema, single vs bulk rows, matching criteria
             ├── extraction-review.md          # how to inspect a document or spot-check a field

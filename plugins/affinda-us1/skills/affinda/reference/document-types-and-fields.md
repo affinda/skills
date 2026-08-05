@@ -23,7 +23,7 @@ the field-types reference + slug conventions + parent-field rules).
 | `slug` | API identifier — camelCase, alphanumeric only, lowercase first letter (see `reference/field-schemas.md` for the convention). | required |
 | `label` | Human-readable name shown in UI | required |
 | `field_type` | Data type (see `reference/field-schemas.md` for the full reference table) | required |
-| `description` | Extraction prompt for the model. Be specific: what to look for, where on the page, expected format, alternative labels. | none |
+| `description` | Extraction prompt for the model. Optional — see "Writing field descriptions" below before adding one. | none |
 | `enabled` | Whether the field is active | `true` |
 
 ## Field settings — Extraction behaviour
@@ -79,6 +79,69 @@ questions unless information is genuinely ambiguous.
 | "section", "group", "line items", or will have children | `group` |
 | "table" with rows / columns | `table` |
 | Everything else (including "email") | `text` |
+
+## Writing field descriptions
+
+Field names and descriptions are how a field is communicated to the
+extraction model — what to look for, where, and what to avoid. They
+are the **secondary** lever for accuracy, after model memory: when a
+prediction is wrong, check the model memory reference before
+reaching for a description (see
+`workflows/debug-low-confidence-results.md`).
+
+**The field name is the first signal — tighten it before adding a
+description.** The model reads the name as its primary hint. A vague
+name like "Date" or "Amount" forces a guess between candidates when
+a document contains several; "Invoice due date" or "Total amount
+payable" usually resolves the ambiguity on its own, with no
+description needed.
+
+**Descriptions are reactive, not preemptive.** Write one to address
+a specific observed failure, not as default field configuration. If
+you can write the description without having seen the document or a
+concrete failure, it's generic knowledge the model already has
+("the date of the transaction" on a field called "Transaction date")
+and it won't help. Good uses:
+
+- Disambiguating between plausible candidates the name can't
+  separate: *"The name of the borrower as shown in the application
+  section, not the name of the broker or the lender."*
+- Anti-examples — what NOT to extract: *"The date the invoice is
+  due. Do not include the timestamp."*
+- Naming layout context the model may lose in conversion: *"the
+  column immediately to the right of the description column, even
+  when the header is missing."*
+- Long-tail rules impractical to teach through a model memory
+  example.
+
+**Keep it tight.** One sentence addressing one failure mode beats a
+paragraph. Long descriptions cost tokens, dilute the signal, and
+accumulate contradictions over time.
+
+**Enum / options fields** are an exception to "reactive only": when
+option labels are short, domain-specific, or ambiguous, the
+description should say what each value means and when to pick it —
+otherwise the model is guessing what the labels represent.
+Self-explanatory labels ("Yes" / "No") need nothing.
+
+**Group parents** are the other exception. Group structure can be
+abstract to the model, so a description on the parent explaining
+what the group represents (and what makes one instance distinct
+from another) helps. For groups with `multiple=true`, the model
+tends to over-predict instances when there's no model memory
+example to anchor against — cardinality limits ("expect no more
+than three") and uniqueness constraints ("do not return duplicates")
+are worth adding up front.
+
+**What descriptions don't do.** They guide prediction; they don't
+transform output, enforce constraints, or override model memory:
+
+- Reformatting ("return as YYYY-MM-DD") → use a text transformation
+  (`transformation_prompt`), not the description.
+- Constraints (must match a list, fall in a range) → use validation
+  rules or data sources.
+- They compose with the model memory reference rather than
+  overriding it — a description can't fix a bad reference.
 
 ## Field groups (UI headings)
 

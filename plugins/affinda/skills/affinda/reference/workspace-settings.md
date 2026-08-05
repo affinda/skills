@@ -36,6 +36,17 @@ specifying a mode.
 extractions, not just low confidence. Don't suggest it unless the
 user has confirmed all uploads are native digital PDFs.
 
+**When in doubt, lean toward more OCR.** OCR adds a second or two
+per document; OCR *not* applied where it was needed produces
+silently wrong predictions. `auto-detect` judges text-layer
+reliability with heuristics (junk characters, very few words,
+malformed word boxes) — text layers that pass the checks while
+still being corrupted slip through, and the model then extracts
+from bad text. Corrupted-but-plausible text layers are more common
+than users expect, which is why `always-partial` is the recommended
+default and why OCR fixes almost always move toward more OCR
+(`auto-detect` → `always-partial` → `always-full`), never back.
+
 ## Document splitting
 
 | Setting | Description |
@@ -126,9 +137,12 @@ pack.
 
 | Strategy | Description |
 |---|---|
-| `auto` | System selects documents to add to memory. **Default, recommended.** |
-| `manual` | Only explicitly marked documents are added. Use for full control over training data. |
-| `always` | All validated documents added. Use for small, consistent document sets. |
+| `auto` | On confirmation, a document is added only when no sufficiently similar reference already exists. **Default, recommended** for users who don't want to manage model memory actively. |
+| `manual` | Only explicitly marked documents are added. Recommend when the user will actively curate references — it keeps "data is correct" (confirm) separate from "use as a reference" (add). |
+| `always` | All validated documents added. For workspaces whose purpose is to feed model memory (e.g. a dedicated training workspace) or small, consistent document sets. |
+
+See `reference/model-memory.md` for how model memory works, when to
+add documents, and how to curate the reference set.
 
 Model memory is shared across workspaces: adding document A (for
 document type B) in workspace C makes it eligible to be used as an

@@ -109,16 +109,50 @@ parsed values don't reflect their recent changes, remind them that
 field changes don't apply to previously-parsed documents until those
 documents are reparsed.
 
-## Model memory
+## Model memory and the reference document
 
-Use `list_model_memory_documents(document_type_id)` only when:
+When a document was extracted with the help of a model-memory example,
+`get_document_extraction` returns that example's ID as
+`reference_document_id` (null when no example was used). This is the
+key to answering "why did it extract X as Y?":
 
-- The user asks about model memory directly, or
-- The user asks *why* a document was extracted a certain way and
-  understanding the reference examples would help answer.
+1. Fetch the document's extraction and note `reference_document_id`.
+2. If set, call `get_document_extraction` with that ID — the reference
+   document is a confirmed document, so its values are ground truth.
+3. Compare the suspect field on both documents. A surprising value
+   often mirrors how the equivalent field was verified on the
+   reference document (e.g. a shortened vendor name, a particular
+   date format, a column mapped differently than expected).
 
-You don't need to fetch model memory for a routine review.
+When you find such a mirror, explain it in plain language: the
+extractor followed the confirmed example. If the example itself is
+the problem — its verified values don't fit the newer documents —
+suggest the user review that reference document, or curate model
+memory for the document type.
 
-When model memory is relevant, explain in plain language: a set of
-confirmed reference documents the document type uses to help extract
-new documents of the same shape.
+Two non-obvious mechanics worth surfacing when the reference is the
+problem:
+
+- **Fixing a reference requires re-confirming it.** Editing
+  annotations on a confirmed document does not update model memory
+  by itself — the document must be confirmed again, and affected
+  documents reparsed, before predictions change. A user who says
+  "I already fixed the reference but it's still wrong" almost
+  always skipped the re-confirm.
+- **A blank field on a reference can suppress that field.** If the
+  reference document has a field left blank, documents matching it
+  may stop predicting that field even when the value is present.
+  When a format has several confirmed candidates, the best reference
+  is the one that exercises the most fields.
+
+See `reference/model-memory.md` for the full picture of how model
+memory works and how to curate it.
+
+Use `list_model_memory_documents(document_type_id)` only when the
+user asks about model memory as a whole — the full set of confirmed
+reference documents the document type uses to help extract new
+documents of the same shape. For one specific document, follow
+`reference_document_id` instead; don't list the whole memory.
+
+You don't need to fetch model memory or the reference document for a
+routine review — reach for them when a value needs explaining.
